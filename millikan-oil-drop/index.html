@@ -26,6 +26,11 @@
     <section class="panel controls" aria-labelledby="controls-heading">
       <h2 id="controls-heading" class="visually-hidden" data-i18n="controls.heading">Controls</h2>
 
+      <div class="field">
+        <label for="drop-choice" data-i18n="drop.label">Oil drop</label>
+        <select id="drop-choice"></select>
+      </div>
+
       <div class="field field--switch">
         <label class="checkbox" for="field-on">
           <input type="checkbox" id="field-on">
@@ -98,6 +103,37 @@
         </select>
       </div>
     </section>
+    <section class="panel calculator" aria-labelledby="calculator-heading">
+      <h2 id="calculator-heading" data-i18n="calculator.heading">Work out the charge</h2>
+      <p class="calculator__formula" dir="ltr">K = 18π [η³ v_t / (2g(ρ_o − ρ_A))]^½     q = K (v_t + v_E) / E</p>
+      <div class="calculator__inputs">
+        <div class="field">
+          <label for="input-fall-speed" data-i18n="calculator.fallSpeed">v_t (µm/s)</label>
+          <input type="number" id="input-fall-speed" step="any" inputmode="decimal" dir="ltr">
+        </div>
+        <div class="field">
+          <label for="input-rise-speed" data-i18n="calculator.riseSpeed">v_E (µm/s)</label>
+          <input type="number" id="input-rise-speed" step="any" inputmode="decimal" dir="ltr">
+        </div>
+        <div class="field">
+          <label for="input-field" data-i18n="calculator.field">E (V/m)</label>
+          <input type="number" id="input-field" step="any" inputmode="decimal" dir="ltr">
+        </div>
+      </div>
+      <div class="buttons">
+        <button type="button" id="calculate" class="button button--primary" data-i18n="calculator.calculate">Calculate</button>
+      </div>
+      <dl class="readouts">
+        <dt data-i18n="calculator.constant">K</dt>
+        <dd id="calculated-constant">—</dd>
+        <dt data-i18n="calculator.charge">q</dt>
+        <dd id="calculated-charge">—</dd>
+        <dt data-i18n="calculator.electrons">n = q / e</dt>
+        <dd id="calculated-electrons">—</dd>
+      </dl>
+      <p id="calculator-result" class="calculator__result"></p>
+    </section>
+
     <section class="panel results" aria-labelledby="results-heading">
       <h2 id="results-heading" data-i18n="results.heading">Recorded charges</h2>
       <p class="hero">
