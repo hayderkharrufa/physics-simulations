@@ -70,7 +70,6 @@ input[type="range"] {
   text-align: end;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
-  direction: ltr;
   unicode-bidi: isolate;
 }
 
@@ -262,7 +261,6 @@ input[type="range"] {
 }
 
 .results-table td {
-  direction: ltr;
   unicode-bidi: isolate;
 }
 
