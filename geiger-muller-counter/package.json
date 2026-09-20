@@ -1,8 +1,0 @@
-{
-  "name": "geiger-muller-counter-simulation",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node --test"
-  }
-}

@@ -1,8 +1,0 @@
-{
-  "name": "millikan-oil-drop-simulation",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node --test"
-  }
-}
