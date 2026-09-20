@@ -1,7 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  AIR_DENSITY,
+  AIR_VISCOSITY,
   ELEMENTARY_CHARGE,
+  GRAVITY,
+  OIL_DENSITY,
+  PLATE_SEPARATION,
+  PRESET_DROPS,
+  chargeFromFieldStrength,
+  createPresetDrop,
+  stokesConstant,
   MAX_BALANCE_VOLTAGE,
   MAX_DROP_RADIUS,
   MAX_EXCESS_ELECTRONS,
@@ -112,4 +121,35 @@ test("a balanced drop is the fall and rise method with no rise", () => {
     chargeFromMeasurement({ fallSpeed: terminalFallSpeed(drop.radius), riseSpeed: 0, voltage }),
   );
   assert.ok(relativeDifference(chargeFromMeasurement({ fallSpeed: terminalFallSpeed(drop.radius), voltage }), drop.charge) < 1e-9);
+});
+
+test("the Stokes constant K matches 18 pi sqrt(eta^3 v_t / 2 g dp)", () => {
+  for (const fallSpeed of [20e-6, 60e-6, 150e-6]) {
+    const byFormula = 18 * Math.PI * Math.sqrt((AIR_VISCOSITY ** 3 * fallSpeed) / (2 * GRAVITY * (OIL_DENSITY - AIR_DENSITY)));
+    assert.ok(relativeDifference(stokesConstant(fallSpeed), byFormula) < 1e-12);
+  }
+});
+
+test("working from the field strength matches working from the voltage", () => {
+  const drop = { radius: 8.8e-7, charge: 3 * ELEMENTARY_CHARGE };
+  const voltage = 400;
+  const riseSpeed = dropVelocity({ ...drop, voltage });
+  const fallSpeed = terminalFallSpeed(drop.radius);
+  const fromVoltage = chargeFromMeasurement({ fallSpeed, riseSpeed, voltage });
+  const fromField = chargeFromFieldStrength({ fallSpeed, riseSpeed, fieldStrength: voltage / PLATE_SEPARATION });
+  assert.ok(relativeDifference(fromField, fromVoltage) < 1e-12);
+  assert.ok(relativeDifference(fromField, drop.charge) < 1e-9);
+});
+
+test("each preset drop carries a different whole number of electrons and balances on the dial", () => {
+  const seen = new Set();
+  PRESET_DROPS.forEach((_, index) => {
+    const drop = createPresetDrop(index);
+    assert.equal(drop.charge, drop.excessElectrons * ELEMENTARY_CHARGE);
+    assert.ok(drop.excessElectrons >= 1 && drop.excessElectrons <= MAX_EXCESS_ELECTRONS);
+    seen.add(drop.excessElectrons);
+    const voltage = balanceVoltage(drop);
+    assert.ok(voltage >= MIN_BALANCE_VOLTAGE && voltage <= MAX_BALANCE_VOLTAGE, `${voltage} V`);
+  });
+  assert.equal(seen.size, PRESET_DROPS.length);
 });

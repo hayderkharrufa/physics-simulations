@@ -70,6 +70,30 @@ function balanceableElectronCounts(radius) {
   return { fewest, most: Math.max(fewest, most) };
 }
 
+export const PRESET_DROPS = [
+  { radius: 5.145e-7, excessElectrons: 1 },
+  { radius: 7.582e-7, excessElectrons: 2 },
+  { radius: 9.553e-7, excessElectrons: 3 },
+  { radius: 8.837e-7, excessElectrons: 4 },
+  { radius: 1.1994e-6, excessElectrons: 5 },
+  { radius: 1.1373e-6, excessElectrons: 6 },
+  { radius: 1.3054e-6, excessElectrons: 7 },
+  { radius: 1.2965e-6, excessElectrons: 8 },
+];
+
+export function createPresetDrop(index) {
+  const { radius, excessElectrons } = PRESET_DROPS[index];
+  return { radius, excessElectrons, charge: excessElectrons * ELEMENTARY_CHARGE };
+}
+
+export function stokesConstant(fallSpeed) {
+  return dragCoefficient(radiusFromFallSpeed(fallSpeed));
+}
+
+export function chargeFromFieldStrength({ fallSpeed, riseSpeed = 0, fieldStrength }) {
+  return (stokesConstant(fallSpeed) * (fallSpeed + riseSpeed)) / fieldStrength;
+}
+
 export function createRandomDrop(random = Math.random) {
   const radius = MIN_DROP_RADIUS + random() * (MAX_DROP_RADIUS - MIN_DROP_RADIUS);
   const { fewest, most } = balanceableElectronCounts(radius);

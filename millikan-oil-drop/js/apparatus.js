@@ -136,7 +136,7 @@ export function createApparatus(svg) {
 
   function setDrop({ positionMetres, radius, radiusRange, visible }) {
     drop.setAttribute("cy", metresToPixels(positionMetres));
-    const sizeFraction = (radius - radiusRange.min) / (radiusRange.max - radiusRange.min);
+    const sizeFraction = Math.min(1, Math.max(0, (radius - radiusRange.min) / (radiusRange.max - radiusRange.min)));
     drop.setAttribute("r", MIN_DROP_PIXEL_RADIUS + sizeFraction * (MAX_DROP_PIXEL_RADIUS - MIN_DROP_PIXEL_RADIUS));
     drop.style.display = visible ? "" : "none";
   }

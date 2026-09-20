@@ -6,7 +6,11 @@ import {
   MIN_DROP_RADIUS,
   OIL_DENSITY,
   PLATE_SEPARATION,
+  PRESET_DROPS,
+  chargeFromFieldStrength,
+  createPresetDrop,
   electricField,
+  stokesConstant,
   chargeFromMeasurement,
   chargeInElementaryUnits,
   createRandomDrop,
@@ -53,6 +57,15 @@ const elements = {
   estimatedCharge: document.getElementById("estimated-charge"),
   estimateLabel: document.getElementById("estimate-label"),
   toggleLanguage: document.getElementById("toggle-language"),
+  dropChoice: document.getElementById("drop-choice"),
+  inputFallSpeed: document.getElementById("input-fall-speed"),
+  inputRiseSpeed: document.getElementById("input-rise-speed"),
+  inputField: document.getElementById("input-field"),
+  calculate: document.getElementById("calculate"),
+  calculatedConstant: document.getElementById("calculated-constant"),
+  calculatedCharge: document.getElementById("calculated-charge"),
+  calculatedElectrons: document.getElementById("calculated-electrons"),
+  calculatorResult: document.getElementById("calculator-result"),
   resultsBody: document.getElementById("results-body"),
   clearResults: document.getElementById("clear-results"),
 };
@@ -199,8 +212,13 @@ function resetRiseTiming() {
   state.riseVoltage = null;
 }
 
+function chosenDrop() {
+  const choice = elements.dropChoice.value;
+  return choice === "random" ? createRandomDrop() : createPresetDrop(Number(choice));
+}
+
 function newDrop() {
-  state.drop = createRandomDrop();
+  state.drop = chosenDrop();
   state.positionMetres = START_POSITION;
   state.velocity = 0;
   state.restingOn = null;
@@ -340,6 +358,45 @@ function changeVoltage(step) {
   elements.voltage.dispatchEvent(new Event("input"));
 }
 
+function renderDropChoices() {
+  const selected = elements.dropChoice.value || "random";
+  const options = [{ value: "random", label: translate("drop.random") }];
+  PRESET_DROPS.forEach((_, index) => {
+    options.push({ value: String(index), label: translate("drop.numbered", { number: index + 1 }) });
+  });
+  elements.dropChoice.replaceChildren(...options.map(({ value, label }) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    return option;
+  }));
+  elements.dropChoice.value = selected;
+}
+
+function clearCalculation() {
+  elements.calculatedConstant.textContent = "—";
+  elements.calculatedCharge.textContent = "—";
+  elements.calculatedElectrons.textContent = "—";
+  elements.calculatorResult.textContent = "";
+}
+
+function calculateCharge() {
+  const fallSpeed = Number(elements.inputFallSpeed.value) * 1e-6;
+  const riseSpeed = Number(elements.inputRiseSpeed.value) * 1e-6;
+  const fieldStrength = Number(elements.inputField.value);
+  if (!(fallSpeed > 0) || !(fieldStrength > 0) || riseSpeed < 0) {
+    clearCalculation();
+    elements.calculatorResult.textContent = translate("calculator.invalid");
+    return;
+  }
+  const charge = chargeFromFieldStrength({ fallSpeed, riseSpeed, fieldStrength });
+  const electrons = chargeInElementaryUnits(charge);
+  elements.calculatedConstant.textContent = `${stokesConstant(fallSpeed).toExponential(3)} kg/s`;
+  elements.calculatedCharge.textContent = formatUnit("coulombs", (charge * 1e19).toFixed(2));
+  elements.calculatedElectrons.textContent = electrons.toFixed(2);
+  elements.calculatorResult.textContent = translate("calculator.result", { count: Math.max(1, Math.round(electrons)) });
+}
+
 function renderConstants() {
   document.getElementById("constant-viscosity").textContent = `${AIR_VISCOSITY.toExponential(2)} Pa·s`;
   document.getElementById("constant-oil-density").textContent = `${OIL_DENSITY} kg/m³`;
@@ -354,6 +411,7 @@ function renderVoltageDisplay() {
 
 function renderLanguage(language) {
   elements.toggleLanguage.lang = language === "en" ? "ar" : "en";
+  renderDropChoices();
   renderVoltageDisplay();
   renderStatus();
   renderResults();
@@ -378,6 +436,8 @@ elements.voltageUp.addEventListener("click", () => changeVoltage(1));
 elements.newDrop.addEventListener("click", newDrop);
 elements.record.addEventListener("click", recordMeasurement);
 elements.toggleLanguage.addEventListener("click", toggleLanguage);
+elements.calculate.addEventListener("click", calculateCharge);
+elements.dropChoice.addEventListener("change", newDrop);
 elements.clearResults.addEventListener("click", () => {
   state.measurements = [];
   renderResults();
