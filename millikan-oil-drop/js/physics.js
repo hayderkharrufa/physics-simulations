@@ -50,9 +50,9 @@ export function balanceVoltage({ radius, charge, plateSeparation = PLATE_SEPARAT
   return (apparentWeight(radius) * plateSeparation) / charge;
 }
 
-export function chargeFromMeasurement({ fallSpeed, voltage, plateSeparation = PLATE_SEPARATION }) {
+export function chargeFromMeasurement({ fallSpeed, riseSpeed = 0, voltage, plateSeparation = PLATE_SEPARATION }) {
   const radius = radiusFromFallSpeed(fallSpeed);
-  return (apparentWeight(radius) * plateSeparation) / voltage;
+  return (dragCoefficient(radius) * (fallSpeed + riseSpeed) * plateSeparation) / voltage;
 }
 
 export function chargeInElementaryUnits(charge) {
