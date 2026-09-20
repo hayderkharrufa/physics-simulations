@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Physics Simulations</title>
+  <meta name="description" content="Browser-based physics experiment simulations for teaching.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/hub.css">
+  <script type="module" src="js/hub.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <h1 data-i18n="page.title">Physics Simulations</h1>
+    <button type="button" id="toggle-language" class="button" data-i18n="language.switch">العربية</button>
+  </header>
+
+  <main>
+    <h2 class="visually-hidden" data-i18n="experiments.heading">Experiments</h2>
+    <ul class="experiments">
+      <li class="card">
+        <a href="geiger-muller-counter/">
+          <img src="geiger-muller-counter/docs/screenshot.png" alt="" loading="lazy">
+          <h2 data-i18n="geiger.title">Geiger–Müller Counter</h2>
+          <p data-i18n="geiger.description">Measure alpha, beta and gamma radiation through lead, plastic and cardboard barriers.</p>
+        </a>
+      </li>
+      <li class="card">
+        <a href="millikan-oil-drop/">
+          <img src="millikan-oil-drop/docs/screenshot.png" alt="" loading="lazy">
+          <h2 data-i18n="millikan.title">Millikan Oil Drop</h2>
+          <p data-i18n="millikan.description">Balance a charged oil drop in an electric field and measure its charge in multiples of e.</p>
+        </a>
+      </li>
+    </ul>
+  </main>
+
+  <footer class="page-footer">
+    <p><a href="https://github.com/hayderkharrufa/physics-simulations" data-i18n="footer.source">Source on GitHub</a></p>
+  </footer>
+</body>
+</html>
