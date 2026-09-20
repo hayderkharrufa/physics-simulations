@@ -56,6 +56,7 @@ export const translations = {
     "constants.airDensity": "Air density",
     "constants.gravity": "Gravity g",
     "constants.separation": "Plate separation d",
+    "footer.source": "Source on GitHub",
   },
   ar: {
     "page.title": "محاكاة تجربة قطرة الزيت لميليكان",
@@ -114,5 +115,6 @@ export const translations = {
     "constants.airDensity": "كثافة الهواء",
     "constants.gravity": "تسارع الجاذبية g",
     "constants.separation": "المسافة بين اللوحين d",
+    "footer.source": "الشيفرة المصدرية على GitHub",
   },
 };

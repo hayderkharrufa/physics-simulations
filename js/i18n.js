@@ -7,6 +7,7 @@ export function createTranslator(translations) {
 
   function translate(key, params = {}) {
     const template = translations[currentLanguage][key] ?? translations.en[key];
+    if (template === undefined) return key;
     return template.replace(/\{(\w+)\}/g, (placeholder, name) => params[name] ?? placeholder);
   }
 
