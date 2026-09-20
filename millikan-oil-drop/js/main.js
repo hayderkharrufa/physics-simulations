@@ -11,7 +11,10 @@ import {
 } from "./physics.js";
 import { createApparatus } from "./apparatus.js";
 import { createChargeChart } from "./chart.js";
-import { initializeLanguage, onLanguageChange, toggleLanguage, translate } from "./i18n.js";
+import { createTranslator } from "../../js/i18n.js";
+import { translations } from "./translations.js";
+
+const { translate, onLanguageChange, toggleLanguage, initializeLanguage } = createTranslator(translations);
 
 const START_POSITION = 1e-3;
 const GATE_START = 1.5e-3;
