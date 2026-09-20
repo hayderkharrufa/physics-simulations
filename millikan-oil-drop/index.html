@@ -49,17 +49,40 @@
       <dl class="readouts">
         <dt data-i18n="readout.fallTime">Fall time (A to B)</dt>
         <dd id="fall-time">—</dd>
-        <dt data-i18n="readout.fallSpeed">Fall speed</dt>
+        <dt data-i18n="readout.fallSpeed">Terminal fall speed v_t</dt>
         <dd id="fall-speed">—</dd>
-        <dt data-i18n="readout.radius">Drop radius</dt>
+        <dt data-i18n="readout.radius">Drop radius a</dt>
         <dd id="drop-radius">—</dd>
-        <dt data-i18n="readout.drift">Drift speed</dt>
+        <dt data-i18n="readout.riseTime">Rise time (B to A)</dt>
+        <dd id="rise-time">—</dd>
+        <dt data-i18n="readout.riseSpeed">Speed with field v_E</dt>
+        <dd id="rise-speed">—</dd>
+        <dt data-i18n="readout.field">Electric field E</dt>
+        <dd id="field-strength">—</dd>
+        <dt data-i18n="readout.drift">Current speed</dt>
         <dd id="drift-speed">—</dd>
         <dt data-i18n="readout.charge">Charge q</dt>
         <dd id="charge">—</dd>
         <dt>q / e</dt>
         <dd id="charge-units">—</dd>
       </dl>
+
+      <details class="constants">
+        <summary data-i18n="constants.heading">Apparatus constants</summary>
+        <p class="constants__formula" dir="ltr">q = 6πηa (v_t + v_E) d / V</p>
+        <dl class="readouts">
+          <dt data-i18n="constants.viscosity">Air viscosity η</dt>
+          <dd id="constant-viscosity">—</dd>
+          <dt data-i18n="constants.oilDensity">Oil density</dt>
+          <dd id="constant-oil-density">—</dd>
+          <dt data-i18n="constants.airDensity">Air density</dt>
+          <dd id="constant-air-density">—</dd>
+          <dt data-i18n="constants.gravity">Gravity g</dt>
+          <dd id="constant-gravity">—</dd>
+          <dt data-i18n="constants.separation">Plate separation d</dt>
+          <dd id="constant-separation">—</dd>
+        </dl>
+      </details>
 
       <div class="buttons">
         <button type="button" id="new-drop" class="button button--primary" data-i18n="button.newDrop">New Drop</button>
@@ -90,7 +113,8 @@
         <thead>
           <tr>
             <th scope="col" data-i18n="table.drop">Drop</th>
-            <th scope="col" data-i18n="table.fallSpeed">Fall speed</th>
+            <th scope="col" data-i18n="table.fallSpeed">v_t</th>
+            <th scope="col" data-i18n="table.riseSpeed">v_E</th>
             <th scope="col" data-i18n="table.radius">Radius</th>
             <th scope="col" data-i18n="table.voltage">Voltage</th>
             <th scope="col" data-i18n="table.charge">q (× 10⁻¹⁹ C)</th>

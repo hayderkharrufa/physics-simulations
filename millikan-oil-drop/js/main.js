@@ -1,7 +1,12 @@
 import {
+  AIR_DENSITY,
+  AIR_VISCOSITY,
+  GRAVITY,
   MAX_DROP_RADIUS,
   MIN_DROP_RADIUS,
+  OIL_DENSITY,
   PLATE_SEPARATION,
+  electricField,
   chargeFromMeasurement,
   chargeInElementaryUnits,
   createRandomDrop,
@@ -38,6 +43,9 @@ const elements = {
   status: document.getElementById("status"),
   fallTime: document.getElementById("fall-time"),
   fallSpeed: document.getElementById("fall-speed"),
+  riseTime: document.getElementById("rise-time"),
+  riseSpeed: document.getElementById("rise-speed"),
+  fieldStrength: document.getElementById("field-strength"),
   dropRadius: document.getElementById("drop-radius"),
   driftSpeed: document.getElementById("drift-speed"),
   charge: document.getElementById("charge"),
@@ -58,6 +66,9 @@ const state = {
   velocity: 0,
   timing: { startedAt: null, fallTime: null },
   measuredFallSpeed: null,
+  riseTiming: { startedAt: null, riseTime: null },
+  measuredRiseSpeed: null,
+  riseVoltage: null,
   simulationSeconds: 0,
   recordedUnits: null,
   restingOn: null,
@@ -75,8 +86,25 @@ function isBalanced() {
     && Math.abs(state.velocity) < BALANCE_SPEED_FRACTION * state.measuredFallSpeed;
 }
 
+function hasRiseMeasurement() {
+  return state.measuredRiseSpeed !== null && state.riseVoltage === appliedVoltage();
+}
+
+function measuredCharge() {
+  if (state.measuredFallSpeed === null) return null;
+  if (hasRiseMeasurement()) {
+    return chargeFromMeasurement({
+      fallSpeed: state.measuredFallSpeed,
+      riseSpeed: state.measuredRiseSpeed,
+      voltage: state.riseVoltage,
+    });
+  }
+  if (isBalanced()) return chargeFromMeasurement({ fallSpeed: state.measuredFallSpeed, voltage: appliedVoltage() });
+  return null;
+}
+
 function canRecord() {
-  return isBalanced() && state.recordedUnits === null;
+  return measuredCharge() !== null && state.recordedUnits === null;
 }
 
 function statusMessage() {
@@ -89,9 +117,11 @@ function statusMessage() {
     return { key: "status.falling" };
   }
   if (!elements.fieldOn.checked) return { key: "status.measured" };
+  if (hasRiseMeasurement()) return { key: "status.riseMeasured" };
   if (isBalanced()) return { key: "status.balanced" };
   if (state.restingOn === "top") return { key: "status.settledTop" };
-  return state.velocity < 0 ? { key: "status.increaseVoltage" } : { key: "status.decreaseVoltage" };
+  if (state.riseTiming.startedAt !== null) return { key: "status.timingRise" };
+  return state.velocity < 0 ? { key: "status.increaseVoltage" } : { key: "status.rising" };
 }
 
 function formatUnit(key, value) {
@@ -124,12 +154,18 @@ function renderReadouts() {
   elements.dropRadius.textContent = measuredFallSpeed === null
     ? "—"
     : formatUnit("micrometres", (radiusFromFallSpeed(measuredFallSpeed) * 1e6).toFixed(2));
+  elements.riseTime.textContent = state.riseTiming.riseTime === null
+    ? "—"
+    : formatUnit("seconds", state.riseTiming.riseTime.toFixed(2));
+  elements.riseSpeed.textContent = state.measuredRiseSpeed === null
+    ? "—"
+    : formatMicrometresPerSecond(state.measuredRiseSpeed);
+  elements.fieldStrength.textContent = formatUnit("voltsPerMetre", Math.round(electricField(appliedVoltage())));
   elements.driftSpeed.textContent = state.drop === null
     ? "—"
     : `${driftArrow()} ${formatMicrometresPerSecond(Math.abs(state.velocity))}`;
 
-  const balanced = isBalanced();
-  const charge = balanced ? chargeFromMeasurement({ fallSpeed: measuredFallSpeed, voltage: appliedVoltage() }) : null;
+  const charge = measuredCharge();
   elements.charge.textContent = charge === null ? "—" : formatUnit("coulombs", (charge * 1e19).toFixed(2));
   elements.chargeUnits.textContent = charge === null ? "—" : chargeInElementaryUnits(charge).toFixed(2);
   elements.record.disabled = !canRecord();
@@ -157,6 +193,12 @@ function resetTiming() {
   state.measuredFallSpeed = null;
 }
 
+function resetRiseTiming() {
+  state.riseTiming = { startedAt: null, riseTime: null };
+  state.measuredRiseSpeed = null;
+  state.riseVoltage = null;
+}
+
 function newDrop() {
   state.drop = createRandomDrop();
   state.positionMetres = START_POSITION;
@@ -164,6 +206,7 @@ function newDrop() {
   state.restingOn = null;
   state.recordedUnits = null;
   resetTiming();
+  resetRiseTiming();
   elements.fieldOn.checked = false;
   renderApparatus();
   renderReadouts();
@@ -186,6 +229,7 @@ function renderResults() {
     const cells = [
       measurement.index,
       formatMicrometresPerSecond(measurement.fallSpeed),
+      formatMicrometresPerSecond(measurement.riseSpeed),
       formatUnit("micrometres", (measurement.radius * 1e6).toFixed(2)),
       formatUnit("volts", Math.round(measurement.voltage)),
       (measurement.charge * 1e19).toFixed(2),
@@ -202,13 +246,13 @@ function renderResults() {
 }
 
 function recordMeasurement() {
-  const voltage = appliedVoltage();
-  const charge = chargeFromMeasurement({ fallSpeed: state.measuredFallSpeed, voltage });
+  const charge = measuredCharge();
   state.measurements.push({
     index: state.measurements.length + 1,
     fallSpeed: state.measuredFallSpeed,
+    riseSpeed: hasRiseMeasurement() ? state.measuredRiseSpeed : 0,
     radius: radiusFromFallSpeed(state.measuredFallSpeed),
-    voltage,
+    voltage: appliedVoltage(),
     charge,
   });
   state.recordedUnits = chargeInElementaryUnits(charge).toFixed(2);
@@ -221,16 +265,42 @@ function crossedDownwards(gate, previousPosition, position) {
   return previousPosition < gate && position >= gate;
 }
 
-function updateTiming(previousPosition, position) {
-  if (elements.fieldOn.checked) return;
+function crossedUpwards(gate, previousPosition, position) {
+  return previousPosition > gate && position <= gate;
+}
+
+function crossingTime(gate, previousPosition, position, elapsedSeconds) {
+  const fractionOfStep = (gate - previousPosition) / (position - previousPosition);
+  return state.simulationSeconds - elapsedSeconds * (1 - fractionOfStep);
+}
+
+function updateRiseTiming(previousPosition, position, elapsedSeconds) {
+  const riseTiming = state.riseTiming;
+  if (crossedUpwards(GATE_END, previousPosition, position)) {
+    resetRiseTiming();
+    state.riseTiming.startedAt = crossingTime(GATE_END, previousPosition, position, elapsedSeconds);
+    return;
+  }
+  if (riseTiming.startedAt !== null && riseTiming.riseTime === null && crossedUpwards(GATE_START, previousPosition, position)) {
+    riseTiming.riseTime = crossingTime(GATE_START, previousPosition, position, elapsedSeconds) - riseTiming.startedAt;
+    state.measuredRiseSpeed = GATE_SEPARATION / riseTiming.riseTime;
+    state.riseVoltage = appliedVoltage();
+  }
+}
+
+function updateTiming(previousPosition, position, elapsedSeconds) {
+  if (elements.fieldOn.checked) {
+    if (state.measuredFallSpeed !== null) updateRiseTiming(previousPosition, position, elapsedSeconds);
+    return;
+  }
   const timing = state.timing;
   if (crossedDownwards(GATE_START, previousPosition, position)) {
     resetTiming();
-    state.timing.startedAt = state.simulationSeconds;
+    state.timing.startedAt = crossingTime(GATE_START, previousPosition, position, elapsedSeconds);
     return;
   }
   if (timing.startedAt !== null && timing.fallTime === null && crossedDownwards(GATE_END, previousPosition, position)) {
-    timing.fallTime = state.simulationSeconds - timing.startedAt;
+    timing.fallTime = crossingTime(GATE_END, previousPosition, position, elapsedSeconds) - timing.startedAt;
     state.measuredFallSpeed = GATE_SEPARATION / timing.fallTime;
   }
 }
@@ -244,7 +314,7 @@ function moveDrop(elapsedSeconds) {
   const lowest = PLATE_SEPARATION - drop.radius;
   const highest = drop.radius;
   state.positionMetres = Math.min(lowest, Math.max(highest, position));
-  updateTiming(previousPosition, state.positionMetres);
+  updateTiming(previousPosition, state.positionMetres, elapsedSeconds);
   if (state.positionMetres === lowest && state.velocity < 0) state.restingOn = "bottom";
   else if (state.positionMetres === highest && state.velocity > 0) state.restingOn = "top";
   else state.restingOn = null;
@@ -270,6 +340,14 @@ function changeVoltage(step) {
   elements.voltage.dispatchEvent(new Event("input"));
 }
 
+function renderConstants() {
+  document.getElementById("constant-viscosity").textContent = `${AIR_VISCOSITY.toExponential(2)} Pa·s`;
+  document.getElementById("constant-oil-density").textContent = `${OIL_DENSITY} kg/m³`;
+  document.getElementById("constant-air-density").textContent = `${AIR_DENSITY} kg/m³`;
+  document.getElementById("constant-gravity").textContent = `${GRAVITY} m/s²`;
+  document.getElementById("constant-separation").textContent = `${(PLATE_SEPARATION * 1000).toFixed(2)} mm`;
+}
+
 function renderVoltageDisplay() {
   elements.voltageDisplay.textContent = formatUnit("volts", elements.voltage.value);
 }
@@ -284,11 +362,13 @@ function renderLanguage(language) {
 }
 
 elements.voltage.addEventListener("input", () => {
+  if (state.riseTiming.startedAt !== null || state.measuredRiseSpeed !== null) resetRiseTiming();
   renderVoltageDisplay();
   renderApparatus();
 });
 elements.fieldOn.addEventListener("change", () => {
   if (state.measuredFallSpeed === null) resetTiming();
+  resetRiseTiming();
   renderApparatus();
   renderReadouts();
   renderStatus();
@@ -305,6 +385,7 @@ elements.clearResults.addEventListener("click", () => {
 
 apparatus.setGatePositions(GATE_START, GATE_END);
 onLanguageChange(renderLanguage);
+renderConstants();
 initializeLanguage();
 renderApparatus();
 requestAnimationFrame(animationFrame);

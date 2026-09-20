@@ -278,3 +278,26 @@ input[type="range"] {
 .field {
   margin-bottom: 14px;
 }
+
+.constants {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--panel-border);
+  color: var(--muted);
+}
+
+.constants summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.constants .readouts {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.constants__formula {
+  margin: 12px 0 0;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}

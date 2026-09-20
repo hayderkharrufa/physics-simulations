@@ -86,3 +86,30 @@ test("random drops stay within the usable range of the apparatus", () => {
     assert.ok(voltage >= MIN_BALANCE_VOLTAGE && voltage <= MAX_BALANCE_VOLTAGE, `${voltage} V`);
   }
 });
+
+test("the fall and rise method measures the charge of a rising drop", () => {
+  for (const radius of [6e-7, 8e-7, 1.1e-6]) {
+    for (let electrons = 1; electrons <= MAX_EXCESS_ELECTRONS; electrons += 1) {
+      const drop = { radius, charge: electrons * ELEMENTARY_CHARGE };
+      const voltage = balanceVoltage(drop) * 1.5;
+      const riseSpeed = dropVelocity({ ...drop, voltage });
+      assert.ok(riseSpeed > 0);
+      const measuredCharge = chargeFromMeasurement({
+        fallSpeed: terminalFallSpeed(radius),
+        riseSpeed,
+        voltage,
+      });
+      assert.ok(relativeDifference(measuredCharge, drop.charge) < 1e-9, `${electrons}e at ${radius}`);
+    }
+  }
+});
+
+test("a balanced drop is the fall and rise method with no rise", () => {
+  const drop = { radius: 9e-7, charge: 4 * ELEMENTARY_CHARGE };
+  const voltage = balanceVoltage(drop);
+  assert.equal(
+    chargeFromMeasurement({ fallSpeed: terminalFallSpeed(drop.radius), voltage }),
+    chargeFromMeasurement({ fallSpeed: terminalFallSpeed(drop.radius), riseSpeed: 0, voltage }),
+  );
+  assert.ok(relativeDifference(chargeFromMeasurement({ fallSpeed: terminalFallSpeed(drop.radius), voltage }), drop.charge) < 1e-9);
+});
