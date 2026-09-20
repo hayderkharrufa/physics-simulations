@@ -8,7 +8,10 @@ import {
   sheetTransmission,
 } from "./physics.js";
 import { createApparatusScene } from "./scene.js";
-import { initializeLanguage, onLanguageChange, toggleLanguage, translate } from "./i18n.js";
+import { createTranslator } from "../../js/i18n.js";
+import { translations } from "./translations.js";
+
+const { translate, onLanguageChange, toggleLanguage, initializeLanguage } = createTranslator(translations);
 
 const VISIBLE_PARTICLES_PER_SECOND = 14;
 const MAX_FRAME_SECONDS = 0.1;
